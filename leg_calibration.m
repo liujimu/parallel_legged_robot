@@ -1,18 +1,32 @@
 % 单腿运动学标定
 clear;
-leg_params = dlmread('leg_cali_params.txt');
-config_init = leg_params(1:end-1);
-% config_init = [0.2337 0.1339 0.2337 -0.1345 0.0590 0.0340 0 0.0800 -0.0850 0 0.6690 0.6900 0.6900];
-stroke = leg_params(end);
+u2y = 0.232; %config(1)
+u2z = 0.134; %config(2)
+u3y = 0.232; %config(3)
+u3z = -0.134; %config(4)
+s2x = 0; %config(5)
+s2y = 0.059; %config(6)
+s2z = 0.034; %config(7)
+s3x = 0; %config(8)
+s3y = 0.059; %config(9)
+s3z = -0.034; %config(10)
+sfx = 0.142; %config(11)
+sfy = -0.034; %config(12)
+sfz = 0; %config(13)
+home_pos = [0.669, 0.69, 0.69];  %config(14:16)
+config_init = [u2y, u2z, u3y, u3z, s2x, s2y, s2z, s3x, s3y, s3z, sfx, sfy, sfz, home_pos];
+stroke = 0.41;
 leg = Leg(config_init, stroke);
 
-target_input = dlmread('.\target_input.txt',',');
-target_input = target_input';
-% target_pee = dlmread('.\target_pee_tracker.txt',',');
-target_pee = dlmread('.\target_pee.txt',',');
-target_pee = target_pee';
-measured_pee = dlmread('.\RobotXIII_20190725\l1pee.txt',',');
-measured_pee(1:2,:) = [];
+target_pee = dlmread('calibration\target_pee.txt')';
+nPee = length(target_pee);
+target_input = zeros(3,nPee);
+for i = 1:nPee
+    leg.setPee(target_pee(:,i));
+    target_input(:,i) = leg.q;
+end
+
+measured_pee = dlmread('calibration\measured_pee.txt');
 measured_pee = measured_pee'./1000;
 
 %% 把数据分为标定项和验证项
@@ -32,22 +46,25 @@ n = length(target_pee_cali);
 
 
 fun = @(e)cal_input_error(e, stroke, measured_pee_cali, target_input_cali);
-offset = [0.002, 0.002, 0.002, 0.002, 0.003, 0.003, 0.002, 0.002, 0.002, 0.05, 0.02, 0.02, 0.02];
+% fun = @(e)cal_input_error(e, stroke, measured_pee, target_input);
+offset = [0.002, 0.002, 0.002, 0.002, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.002, 0.002, 0.002, 0.005, 0.005, 0.005];
 lb = config_init - offset;
 ub = config_init + offset;
 options_1 = optimoptions('lsqnonlin','Algorithm','levenberg-marquardt','Display','iter');
-config_calibrated_1 = lsqnonlin(fun,config_init,[],[],options_1);
+config_cali_1 = lsqnonlin(fun,config_init,[],[],options_1);
 options_2 = optimoptions('lsqnonlin','Display','iter');
-[config_calibrated,resnorm,residual,exitflag,output,lambda,jacobian] = lsqnonlin(fun,config_init,lb,ub,options_2);
+[config_cali_2,resnorm,residual,exitflag,output,lambda,jacobian] = lsqnonlin(fun,config_init,lb,ub,options_2);
 
 %% 
-R = RotX(config_calibrated(9));
-Sfipe = [0.0282 0.0100 0]';
-Sfipe_calibrated = R*Sfipe;
+% R = RotX(config_cali_2(9));
+% Sfipe = [0.0282 0.0100 0]';
+% Sfipe_calibrated = R*Sfipe;
 
 %% Plot result
-dq_init = cal_input_error(config_init, stroke, measured_pee, target_input);
-dq_compensated = cal_input_error(config_calibrated, stroke, measured_pee, target_input);
+% dq_init = cal_input_error(config_init, stroke, measured_pee, target_input);
+% dq_compensated = cal_input_error(config_cali_2, stroke, measured_pee, target_input);
+dq_init = cal_input_error(config_init, stroke, measured_pee_veri, target_input_veri);
+dq_compensated = cal_input_error(config_cali_2, stroke, measured_pee_veri, target_input_veri);
 disp('标定前的输入误差（mm）：')
 disp(1000*max(abs(dq_init)))
 disp('标定后的输入误差（mm）：')
@@ -55,7 +72,7 @@ disp(1000*max(abs(dq_compensated)))
 
 % compensated_pee = dlmread('.\RobotEDU6_compensated_20190315\l5pee.txt',',');
 % compensated_pee = compensated_pee'./1000;
-leg_compensated = Leg(config_calibrated, stroke);
+leg_compensated = Leg(config_cali_2, stroke);
 compensated_pee = zeros(size(measured_pee));
 measured_pee_error = zeros(1,length(measured_pee));
 compensated_pee_error = zeros(1,n);
