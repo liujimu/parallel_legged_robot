@@ -26,7 +26,8 @@ for i = 1:nPee
     target_input(:,i) = leg.q;
 end
 
-measured_pee = dlmread('calibration\measured_pee.txt');
+% measured_pee = dlmread('calibration\measured_pee.txt');
+measured_pee = dlmread('calibration\l3pee.txt');
 measured_pee = measured_pee'./1000;
 
 %% 把数据分为标定项和验证项
@@ -84,11 +85,12 @@ for i = 1:length(measured_pee)
     compensated_pee_error(i) = 1000.*norm(measured_pee(:,i) - compensated_pee(:,i));
 end
 
-plot(measured_pee_error)
+plot(measured_pee_error,'-s')
 hold on
-plot(compensated_pee_error)
+plot(compensated_pee_error,'-o')
 hold off
-ylabel('error(mm)')
+xlabel('Calibration configuration')
+ylabel('Euclidean error (mm)')
 legend('Before compensation','After compensation')
 
 %% 函数定义

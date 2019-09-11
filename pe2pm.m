@@ -1,6 +1,6 @@
 function pm = pe2pm(pe)
 % pe2pm
-%   根据位置和欧拉角来计算位姿矩阵
+%   根据位置和313欧拉角来计算位姿矩阵
 
     pm=eye(4);
     %% nargin==0
