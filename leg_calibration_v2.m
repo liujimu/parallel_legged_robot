@@ -38,6 +38,7 @@ end
 measured_pee = dlmread('calibration\l1pee_b.txt');
 measured_pee = measured_pee(3:end,:)'./1000;
 base_pe = leg_base_pe(2,:);
+base_pe(1) = -0.48203;
 fun = @(e)cal_input_error(e, config, base_pe, stroke, measured_pee, target_input);
 % fun = @(e)cal_input_error(e, stroke, measured_pee, target_input);
 param_errors = zeros(1,19);
@@ -46,39 +47,39 @@ lb = -ub;
 % options_1 = optimoptions('lsqnonlin','Algorithm','levenberg-marquardt','Display','iter');
 % error_cali_1 = lsqnonlin(fun,param_errors,[],[],options_1);
 options_2 = optimoptions('lsqnonlin','Display','iter');
-[error_cali_2,resnorm,residual,exitflag,output,lambda,jacobian] = lsqnonlin(fun,param_errors,lb,ub,options_2);
+[error_cali,resnorm,residual,exitflag,output,lambda,jacobian] = lsqnonlin(fun,param_errors,lb,ub,options_2);
 
 %% Plot result
-% dq_init = cal_input_error(config_init, stroke, measured_pee, target_input);
-% dq_compensated = cal_input_error(config_cali_2, stroke, measured_pee, target_input);
+dq_init = cal_input_error(param_errors, config, leg_base_pe(2,:), stroke, measured_pee, target_input);
+dq_compensated = cal_input_error(error_cali, config, base_pe, stroke, measured_pee, target_input);
 % dq_init = cal_input_error(config, stroke, measured_pee_veri, target_input_veri);
 % dq_compensated = cal_input_error(config_cali_2, stroke, measured_pee_veri, target_input_veri);
-% disp('标定前的输入误差（mm）：')
-% disp(1000*max(abs(dq_init)))
-% disp('标定后的输入误差（mm）：')
-% disp(1000*max(abs(dq_compensated)))
-% 
-% % compensated_pee = dlmread('.\RobotEDU6_compensated_20190315\l5pee.txt',',');
-% % compensated_pee = compensated_pee'./1000;
-% leg_compensated = Leg(config_cali_2, stroke);
-% compensated_pee = zeros(size(measured_pee));
-% measured_pee_error = zeros(1,length(measured_pee));
-% compensated_pee_error = zeros(1,n);
-% for i = 1:length(measured_pee)
-%     measured_pee_error(i) = 1000.*norm(measured_pee(:,i) - target_pee(:,i));
-%     leg_compensated.setQ(target_input(:,i),target_pee(:,i));
-%     calculated_pee = leg_compensated.Pee;
-%     compensated_pee(:,i) = calculated_pee;
-%     compensated_pee_error(i) = 1000.*norm(measured_pee(:,i) - compensated_pee(:,i));
-% end
-% 
-% plot(measured_pee_error,'-s')
-% hold on
-% plot(compensated_pee_error,'-o')
-% hold off
-% xlabel('Calibration configuration')
-% ylabel('Euclidean error (mm)')
-% legend('Before compensation','After compensation')
+disp('标定前的输入误差（mm）：')
+disp(1000*max(abs(dq_init)))
+disp('标定后的输入误差（mm）：')
+disp(1000*max(abs(dq_compensated)))
+
+config_updated = config + error_cali(1:16);
+base_pe_updated = base_pe + [0,0,0,error_cali(17:end)];
+leg_compensated = Leg(config_updated, stroke, base_pe_updated);
+compensated_pee = zeros(size(measured_pee));
+measured_pee_error = zeros(1,length(measured_pee));
+compensated_pee_error = zeros(1,length(measured_pee));
+for i = 1:length(measured_pee)
+    measured_pee_error(i) = 1000.*norm(measured_pee(:,i) - target_pee2b(:,i));
+    leg_compensated.setQ(target_input(:,i),target_pee(:,i));
+    calculated_pee = leg_compensated.Pee_b;
+    compensated_pee(:,i) = calculated_pee;
+    compensated_pee_error(i) = 1000.*norm(measured_pee(:,i) - compensated_pee(:,i));
+end
+
+plot(measured_pee_error,'-s')
+hold on
+plot(compensated_pee_error,'-o')
+hold off
+xlabel('Calibration configuration')
+ylabel('Euclidean error (mm)')
+legend('Before compensation','After compensation')
 
 %% 函数定义
 function dq = cal_input_error(param_errors,config, base_pe, stroke, pee, input, n)

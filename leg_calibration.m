@@ -26,8 +26,8 @@ for i = 1:nPee
     target_input(:,i) = leg.q;
 end
 
-% measured_pee = dlmread('calibration\measured_pee.txt');
-measured_pee = dlmread('calibration\l3pee.txt');
+measured_pee = dlmread('calibration\measured_pee.txt');
+% measured_pee = dlmread('calibration\l1pee.txt');
 measured_pee = measured_pee'./1000;
 
 %% 把数据分为标定项和验证项
