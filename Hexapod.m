@@ -7,6 +7,7 @@ classdef Hexapod < handle
         pmb
         pee
         pin
+        q
         leg_base_pe
         leg
     end
@@ -29,7 +30,6 @@ classdef Hexapod < handle
             for i = 1:6
                 obj.leg(i) = Leg(leg_config, stroke, obj.leg_base_pe(i,:));
             end
-
         end
         
         function invKin(obj,peb,pee)
@@ -43,9 +43,21 @@ classdef Hexapod < handle
             for i = 1:6
                 obj.leg(i).setPee(pee2b(:,i),'B');
                 obj.pin(:,i) = obj.leg(i).Pin;
+                obj.q(:,i) = obj.leg(i).q;
             end
         end
         
+        function setQ(obj, peb, q, init_pee)
+            %forKin 运动学正解，根据身体位姿和丝杠长度计算足尖坐标
+            %   此处显示详细说明
+            obj.peb = peb;
+            obj.pmb = pe2pm(obj.peb);
+            for i = 1:6
+                obj.leg(i).setQ(q(:,i), init_pee(:,i), 'B');
+                obj.pee(:,i) = obj.leg(i).Pee_b;
+            end
+        end
+
         function bool_out = isInWorkspace(obj)
             %isInWorkspace 判断当前末端位置是否在工作空间内
             %   此处显示详细说明

@@ -211,15 +211,30 @@ classdef Leg < handle
             obj.setPee(X);
         end
         
-        function setQ(obj, q, init_pee)
+        function setQ(obj, q, init_pee, Marker)
             %setQ 设置输入变量
             %   此处显示详细说明
-            if nargin == 2
-                init_pee = obj.Sfipe(1:3) + [obj.home_pos(1);0;0];
+            if nargin < 4
+                Marker = 'L';
+                if nargin < 3
+                    init_pee = obj.Sfipe(1:3) + [obj.home_pos(1);0;0];
+                end
             end
+            switch Marker
+                case 'L'
+                    % 把足尖坐标从腿坐标系变换到身体坐标系
+                    init_pee2l = init_pee(:);
+                case 'B'
+                    % 把足尖坐标从身体坐标系变换到腿坐标系
+                    init_pee2l = obj.base_pm\[init_pee(:);1];
+                    init_pee2l = init_pee2l(1:3);
+                otherwise
+                    error('Marker input error');
+            end
+            
             obj.q = q(:);
             pin = q(:) + obj.home_pos;
-            obj.forwardKinematics(pin, init_pee);
+            obj.forwardKinematics(pin, init_pee2l);
         end
 
         function bool_out = isInWorkspace(obj)

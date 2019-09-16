@@ -34,11 +34,15 @@ for i = 1:nPee
     target_pee2b(:,i) = leg.Pee_b;
 end
 
+leg_base_ori = dlmread('calibration_20190914\Sphere Centers.txt',',',0,1);
+leg_base_ori = leg_base_ori./1000;
+
 % ±Í∂®1∫≈Õ»£®LM£©
-measured_pee = dlmread('calibration\l1pee_b.txt');
-measured_pee = measured_pee(3:end,:)'./1000;
-base_pe = leg_base_pe(2,:);
-base_pe(1) = -0.48203;
+leg_id = 3;
+base_pe = leg_base_pe(leg_id + 1,:);
+base_pe(1:3) = leg_base_ori(leg_id + 1,:);
+measured_pee = dlmread('calibration_20190914\l3pee.txt');
+measured_pee = measured_pee'./1000;
 fun = @(e)cal_input_error(e, config, base_pe, stroke, measured_pee, target_input);
 % fun = @(e)cal_input_error(e, stroke, measured_pee, target_input);
 param_errors = zeros(1,19);
@@ -50,7 +54,7 @@ options_2 = optimoptions('lsqnonlin','Display','iter');
 [error_cali,resnorm,residual,exitflag,output,lambda,jacobian] = lsqnonlin(fun,param_errors,lb,ub,options_2);
 
 %% Plot result
-dq_init = cal_input_error(param_errors, config, leg_base_pe(2,:), stroke, measured_pee, target_input);
+dq_init = cal_input_error(param_errors, config, leg_base_pe(leg_id,:), stroke, measured_pee, target_input);
 dq_compensated = cal_input_error(error_cali, config, base_pe, stroke, measured_pee, target_input);
 % dq_init = cal_input_error(config, stroke, measured_pee_veri, target_input_veri);
 % dq_compensated = cal_input_error(config_cali_2, stroke, measured_pee_veri, target_input_veri);
