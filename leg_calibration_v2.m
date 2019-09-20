@@ -22,7 +22,9 @@ leg_base_pe = [ -0.43322 , 0 , -0.19907,   pi/2,  pi* 2/3,   -pi/2-pi*70/180;
                  0.43322 , 0 , -0.19907,   pi/2,  pi* 1/3,   -pi/2-pi*70/180;
                  0.48305 , 0 ,  0,         pi/2,  pi* 0/3,   -pi/2-pi*70/180;
                  0.43322 , 0 ,  0.19907,   pi/2,  pi* 5/3,   -pi/2-pi*70/180];
-leg = Leg(config, stroke, leg_base_pe(2,:));
+% 标定的腿的序号
+leg_id = 5;
+leg = Leg(config, stroke, leg_base_pe(leg_id + 1,:));
 
 target_pee = dlmread('calibration\target_pee.txt')';
 nPee = length(target_pee);
@@ -37,11 +39,16 @@ end
 leg_base_ori = dlmread('calibration_20190914\Sphere Centers.txt',',',0,1);
 leg_base_ori = leg_base_ori./1000;
 
+hm = dlmread('calibration_20190914\hm.txt',',',0,1);
+hm = hm'./1000;
+rc = dlmread('calibration_20190914\rc.txt',',',0,1);
+rc = rc'./1000;
+
 % 标定1号腿（LM）
-leg_id = 3;
 base_pe = leg_base_pe(leg_id + 1,:);
 base_pe(1:3) = leg_base_ori(leg_id + 1,:);
-measured_pee = dlmread('calibration_20190914\l3pee.txt');
+filename = ['calibration_20190914\l' num2str(leg_id) 'pee.txt'];
+measured_pee = dlmread(filename);
 measured_pee = measured_pee'./1000;
 fun = @(e)cal_input_error(e, config, base_pe, stroke, measured_pee, target_input);
 % fun = @(e)cal_input_error(e, stroke, measured_pee, target_input);
@@ -54,7 +61,7 @@ options_2 = optimoptions('lsqnonlin','Display','iter');
 [error_cali,resnorm,residual,exitflag,output,lambda,jacobian] = lsqnonlin(fun,param_errors,lb,ub,options_2);
 
 %% Plot result
-dq_init = cal_input_error(param_errors, config, leg_base_pe(leg_id,:), stroke, measured_pee, target_input);
+dq_init = cal_input_error(param_errors, config, leg_base_pe(leg_id + 1,:), stroke, measured_pee, target_input);
 dq_compensated = cal_input_error(error_cali, config, base_pe, stroke, measured_pee, target_input);
 % dq_init = cal_input_error(config, stroke, measured_pee_veri, target_input_veri);
 % dq_compensated = cal_input_error(config_cali_2, stroke, measured_pee_veri, target_input_veri);
@@ -64,7 +71,7 @@ disp('标定后的输入误差（mm）：')
 disp(1000*max(abs(dq_compensated)))
 
 config_updated = config + error_cali(1:16);
-base_pe_updated = base_pe + [0,0,0,error_cali(17:end)];
+base_pe_updated = base_pe + [0,0,0,error_cali(17:19)];
 leg_compensated = Leg(config_updated, stroke, base_pe_updated);
 compensated_pee = zeros(size(measured_pee));
 measured_pee_error = zeros(1,length(measured_pee));
@@ -77,13 +84,33 @@ for i = 1:length(measured_pee)
     compensated_pee_error(i) = 1000.*norm(measured_pee(:,i) - compensated_pee(:,i));
 end
 
-plot(measured_pee_error,'-s')
+plot(measured_pee_error,'--s')
 hold on
 plot(compensated_pee_error,'-o')
 hold off
 xlabel('Calibration configuration')
 ylabel('Euclidean error (mm)')
-legend('Before compensation','After compensation')
+legend('Before compensation','After compensation','Location','east')
+
+%% 将标定结果写入文本文件
+output = error_cali';
+U2ipe = leg_compensated.U2ipe(1:3)';
+U3ipe = leg_compensated.U3ipe(1:3)';
+S2ipe = leg_compensated.S2ipe(1:3)';
+S3ipe = leg_compensated.S3ipe(1:3)';
+Sfipe = leg_compensated.Sfipe(1:3)';
+home_pos = leg_compensated.home_pos';
+
+fileID = fopen(['calibration_20190914\leg' num2str(leg_id) '_param.txt'],'w');
+fprintf(fileID,'U2i, \t%2.5f, %2.5f, %2.5f\n',U2ipe);
+fprintf(fileID,'U3i, \t%2.5f, %2.5f, %2.5f\n',U3ipe);
+fprintf(fileID,'S2i, \t%2.5f, %2.5f, %2.5f\n',S2ipe);
+fprintf(fileID,'S3i, \t%2.5f, %2.5f, %2.5f\n',S3ipe);
+fprintf(fileID,'Sfi, \t%2.5f, %2.5f, %2.5f\n',Sfipe);
+fprintf(fileID,'home_pos, \t%2.5f, %2.5f, %2.5f\n',home_pos);
+fprintf(fileID,'leg_base, \t%2.5f, %2.5f, %2.5f, %2.5f, %2.5f, %2.5f\n', base_pe_updated);
+fclose(fileID);
+ 
 
 %% 函数定义
 function dq = cal_input_error(param_errors,config, base_pe, stroke, pee, input, n)
