@@ -1,5 +1,6 @@
 % 单腿运动学标定，将leg_base姿态角也作为标定参数
 clear;
+close all
 u2y = 0.232; %config(1)
 u2z = 0.134; %config(2)
 u3y = 0.232; %config(3)
@@ -84,6 +85,7 @@ for i = 1:length(measured_pee)
     compensated_pee_error(i) = 1000.*norm(measured_pee(:,i) - compensated_pee(:,i));
 end
 
+% 足尖坐标误差
 plot(measured_pee_error,'--s')
 hold on
 plot(compensated_pee_error,'-o')
@@ -91,6 +93,30 @@ hold off
 xlabel('Calibration configuration')
 ylabel('Euclidean error (mm)')
 legend('Before compensation','After compensation','Location','east')
+
+% 输入误差
+dq_init_norm = zeros(nPee,1);
+dq_compensated_norm = zeros(nPee,1);
+for i = 1:nPee
+    dq_init_norm(i) = 1000*max(abs(dq_init(3*i-2:3*i)));
+    dq_compensated_norm(i) = 1000*max(abs(dq_compensated(3*i-2:3*i)));
+end
+figure
+color1 = [0 0.4470 0.7410];
+color2 = [0.8500 0.3250 0.0980];
+plot(dq_init_norm,'-o','LineWidth',1,'MarkerSize',3,'MarkerFaceColor',color1)
+hold on
+plot(dq_compensated_norm,'-s','LineWidth',1,'MarkerSize',4,'MarkerFaceColor',color2)
+hold off
+fontsz=10;
+set(gca,'Position',[0.15 0.2 0.8 0.75],'FontSize',fontsz,'FontName','Times New Roman');
+set(gcf,'Position',[232 246 320 240]); 
+xlabel('Calibration configuration index','FontSize',fontsz,'FontName','Times New Roman');
+ylabel('Maximal input errors (mm)','FontSize',fontsz,'FontName','Times New Roman');
+xlim([1 nPee]);
+xticks(1:2:nPee);
+yticks(0:1:6);
+box off
 
 %% 将标定结果写入文本文件
 output = error_cali';

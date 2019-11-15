@@ -248,10 +248,10 @@ classdef Leg < handle
                 end
             end
             % U副转角限制
-            if max(abs(obj.alpha)) > 45/180*pi
+            if max(abs(obj.alpha)) > 36/180*pi
                 bool_out = false;
             end
-            if max(abs(obj.beta)) > 45/180*pi
+            if max(abs(obj.beta)) > 36/180*pi
                 bool_out = false;
             end
         end
