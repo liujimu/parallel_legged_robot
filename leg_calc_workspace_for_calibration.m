@@ -68,9 +68,9 @@ scatter3(pee_b(1),-pee_b(3),pee_b(2),...
 s = trisurf(k,1000.*border(3,:),1000.*border(2,:),1000.*border(1,:),border(1,:));
 s.FaceColor = 'interp';
 s.FaceAlpha = 0.5;
-s.EdgeColor = 'k';
+s.EdgeColor = 'none';
 s.EdgeAlpha = 0.2;
-% hold off
+% hold offaf
 % shading interp
 
 %% »­³ö±ê¶¨pee 

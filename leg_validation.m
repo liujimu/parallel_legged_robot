@@ -1,3 +1,6 @@
+clear
+close all
+
 rc_v = dlmread('validation_20190920\rc_v.txt',',',0,1);
 target_pee_v = [[ 0,    0,     0.1 ];
                 [ 0,    0,     0.2 ];
@@ -36,10 +39,13 @@ for leg_id = 0:5
     delta = pee_v - 1000.*target_pee_v - repmat(rc_v(leg_id + 1,:),n,1);
     error(leg_id + 1,:) = sum(abs(delta).^2,2).^(1/2);
 end
+mean_error = mean(error');
+std_error = std(error');
+AP = mean_error + 3*std_error;
 boxplot(error')
-fontsz=11;
+fontsz=10;
 set(gca,'Position',[.12 .15 .85 .8],'FontSize',fontsz,'FontName','Times New Roman');
-set(gcf,'Position',[232 246 500 330]); 
+set(gcf,'Position',[232 246 360 260]); 
 xlabel('Leg index','FontSize',fontsz,'FontName','Times New Roman');
 ylabel('Euclidean error (mm)','FontSize',fontsz,'FontName','Times New Roman');
 % box off;
@@ -52,10 +58,13 @@ color2 = [0.8500 0.3250 0.0980];
 plot3(target_pee_plot(:,1),target_pee_plot(:,3),target_pee_plot(:,2),'-o','LineWidth',1,'MarkerSize',3,'MarkerFaceColor',color1)
 grid on
 axis equal
-fontsz=10;
+% fontsz=10;
+set(gca,'Position',[.12 .15 .8 .8],'FontSize',fontsz,'FontName','Times New Roman');
+set(gcf,'Position',[232 246 400 300]); 
 xlabel('\it x','FontSize',fontsz,'FontName','Times New Roman')
 ylabel('\it z','FontSize',fontsz,'FontName','Times New Roman')
 zlabel('\it y','FontSize',fontsz,'FontName','Times New Roman')
+set(gca,'YDir','reverse')
 xticks(-300:100:300)
 yticks(-300:100:300)
-view(-60,18)
+view(-30,18)

@@ -46,7 +46,7 @@ n = length(target_pee_cali);
 % end
 
 
-fun = @(e)cal_input_error(e, stroke, measured_pee_cali, target_input_cali);
+fun = @(e)cal_input_error(e, stroke, measured_pee, target_input);
 % fun = @(e)cal_input_error(e, stroke, measured_pee, target_input);
 offset = [0.002, 0.002, 0.002, 0.002, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.002, 0.002, 0.002, 0.005, 0.005, 0.005];
 lb = config_init - offset;

@@ -24,7 +24,7 @@ leg_base_pe = [ -0.43322 , 0 , -0.19907,   pi/2,  pi* 2/3,   -pi/2-pi*70/180;
                  0.48305 , 0 ,  0,         pi/2,  pi* 0/3,   -pi/2-pi*70/180;
                  0.43322 , 0 ,  0.19907,   pi/2,  pi* 5/3,   -pi/2-pi*70/180];
 % 标定的腿的序号
-leg_id = 0;
+leg_id = 3;
 leg = Leg(config, stroke, leg_base_pe(leg_id + 1,:));
 
 target_pee = dlmread('calibration\target_pee.txt')';
@@ -59,30 +59,15 @@ max(norm_error(:))
 
 fun = @(e)cal_input_error(e, config, base_pe, stroke, measured_pee, target_input);
 % fun = @(e)cal_input_error(e, stroke, measured_pee, target_input);
-param_errors = zeros(1,19);
-ub = [0.002, 0.002, 0.002, 0.002, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.002, 0.002, 0.002, 0.005, 0.005, 0.005, 0.02, 0.02, 0.02];
+param_errors = zeros(1,17);
+ub = [0.002, 0.002, 0.002, 0.001, 0.001, 0.001, 0.001, 0.001, 0.002, 0.002, 0.002, 0.005, 0.005, 0.005, 0.02, 0.02, 0.02];
 lb = -ub;
 % options_1 = optimoptions('lsqnonlin','Algorithm','levenberg-marquardt','Display','iter');
-% error_cali = lsqnonlin(fun,param_errors,[],[],options_1);
+% error_cali_1 = lsqnonlin(fun,param_errors,[],[],options_1);
 options_2 = optimoptions('lsqnonlin','Display','iter');
 [error_cali,resnorm,residual,exitflag,output,lambda,jacobian] = lsqnonlin(fun,param_errors,lb,ub,options_2);
 
-%% 计算辨识矩阵
-n1 = length(param_errors);
-delta_q0 = fun(param_errors);
-n2 = length(delta_q0);
-T = zeros(n2,n1);
-eps = 1e-4;
-for i = 1:n1
-    delta_param = zeros(1,n1);
-    delta_param(i) = eps;
-    T(:,i) = (fun(delta_param) - delta_q0)./eps;
-end
-rank(T)
-cond(T)
-[Q,R] = qr(T);
-
-%% 绘图
+%% Plot result
 dq_init = cal_input_error(param_errors, config, leg_base_pe(leg_id + 1,:), stroke, measured_pee, target_input);
 dq_compensated = cal_input_error(error_cali, config, base_pe, stroke, measured_pee, target_input);
 % dq_init = cal_input_error(config, stroke, measured_pee_veri, target_input_veri);
@@ -92,8 +77,12 @@ disp(1000*max(abs(dq_init)))
 disp('标定后的输入误差（mm）：')
 disp(1000*max(abs(dq_compensated)))
 
-config_updated = config + error_cali(1:16);
-base_pe_updated = base_pe + [0,0,0,error_cali(17:19)];
+
+config_error = error_cali(1:14);
+config_error = [config_error(1:2) config_error(1) config_error(3) 0 config_error(4:end)];
+
+config_updated = config + config_error;
+base_pe_updated = base_pe + [0,0,0,error_cali(15:17)];
 leg_compensated = Leg(config_updated, stroke, base_pe_updated);
 compensated_pee = zeros(size(measured_pee));
 measured_pee_error = zeros(1,length(measured_pee));
@@ -132,32 +121,32 @@ hold off
 fontsz=10;
 legend('Before compensation','After compensation','Location','east')
 set(gca,'Position',[0.15 0.2 0.8 0.75],'FontSize',fontsz,'FontName','Times New Roman');
-set(gcf,'Position',[232 246 360 260]); 
-xlabel('Calibration configurations','FontSize',fontsz,'FontName','Times New Roman');
-ylabel('Maximum input errors (mm)','FontSize',fontsz,'FontName','Times New Roman');
+set(gcf,'Position',[232 246 320 240]); 
+xlabel('Calibration configuration index','FontSize',fontsz,'FontName','Times New Roman');
+ylabel('Maximal input errors (mm)','FontSize',fontsz,'FontName','Times New Roman');
 xlim([1 nPee]);
 xticks(1:2:nPee);
 yticks(0:1:6);
 box off
 
 %% 将标定结果写入文本文件
-output = error_cali';
-U2ipe = leg_compensated.U2ipe(1:3)';
-U3ipe = leg_compensated.U3ipe(1:3)';
-S2ipe = leg_compensated.S2ipe(1:3)';
-S3ipe = leg_compensated.S3ipe(1:3)';
-Sfipe = leg_compensated.Sfipe(1:3)';
-home_pos = leg_compensated.home_pos';
-
-fileID = fopen(['calibration_20190914\leg' num2str(leg_id) '_param.txt'],'w');
-fprintf(fileID,'U2i, \t%2.5f, %2.5f, %2.5f\n',U2ipe);
-fprintf(fileID,'U3i, \t%2.5f, %2.5f, %2.5f\n',U3ipe);
-fprintf(fileID,'S2i, \t%2.5f, %2.5f, %2.5f\n',S2ipe);
-fprintf(fileID,'S3i, \t%2.5f, %2.5f, %2.5f\n',S3ipe);
-fprintf(fileID,'Sfi, \t%2.5f, %2.5f, %2.5f\n',Sfipe);
-fprintf(fileID,'home_pos, \t%2.5f, %2.5f, %2.5f\n',home_pos);
-fprintf(fileID,'leg_base, \t%2.5f, %2.5f, %2.5f, %2.5f, %2.5f, %2.5f\n', base_pe_updated);
-fclose(fileID);
+% output = error_cali';
+% U2ipe = leg_compensated.U2ipe(1:3)';
+% U3ipe = leg_compensated.U3ipe(1:3)';
+% S2ipe = leg_compensated.S2ipe(1:3)';
+% S3ipe = leg_compensated.S3ipe(1:3)';
+% Sfipe = leg_compensated.Sfipe(1:3)';
+% home_pos = leg_compensated.home_pos';
+% 
+% fileID = fopen(['calibration_20190914\leg' num2str(leg_id) '_param.txt'],'w');
+% fprintf(fileID,'U2i, \t%2.5f, %2.5f, %2.5f\n',U2ipe);
+% fprintf(fileID,'U3i, \t%2.5f, %2.5f, %2.5f\n',U3ipe);
+% fprintf(fileID,'S2i, \t%2.5f, %2.5f, %2.5f\n',S2ipe);
+% fprintf(fileID,'S3i, \t%2.5f, %2.5f, %2.5f\n',S3ipe);
+% fprintf(fileID,'Sfi, \t%2.5f, %2.5f, %2.5f\n',Sfipe);
+% fprintf(fileID,'home_pos, \t%2.5f, %2.5f, %2.5f\n',home_pos);
+% fprintf(fileID,'leg_base, \t%2.5f, %2.5f, %2.5f, %2.5f, %2.5f, %2.5f\n', base_pe_updated);
+% fclose(fileID);
  
 
 %% 函数定义
@@ -166,8 +155,10 @@ function dq = cal_input_error(param_errors,config, base_pe, stroke, pee, input, 
         n = length(pee);
     end
     input_error = zeros(3,n);
-    nc = length(config);
-    config_updated = config + param_errors(1:nc);
+    nc = length(param_errors)-3;
+    config_error = param_errors(1:nc);
+    config_error = [config_error(1:2) config_error(1) config_error(3) 0 config_error(4:end)];
+    config_updated = config + config_error;
     base_pe_updated = base_pe + [0,0,0,param_errors(nc+1:end)];
     for i = 1:n
         leg = Leg(config_updated, stroke, base_pe_updated);

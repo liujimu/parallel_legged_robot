@@ -187,12 +187,23 @@ classdef Leg < handle
             obj.jac = J1/J2;
         end
         
+        function Fin = calcJointForces(obj, Fee)
+            %calcJointForces 由足尖力计算关节力
+            %   Fee为足尖力，是三维向量，在腿坐标系下表示
+            Fee = Fee(:);
+            obj.calcVelocityJacobian();
+            Fin = obj.jac'*Fee;
+        end
+        
         function forwardKinematics(obj, pin, init_pee)
             %forwardKinematics 运动学正解
-            %   在腿坐标系下计算
+            %   pin是关节坐标
+            %   init_pee是初始足尖坐标，三维向量，在腿坐标系下表达
+            %   计算后更新Pee属性
             if nargin == 2
                 init_pee = obj.Sfipe(1:3) + [obj.home_pos(1);0;0];
             end
+            pin = pin(:);
             X = init_pee(:);
             dq = ones(3,1);
             eps = 10e-9;
@@ -248,10 +259,14 @@ classdef Leg < handle
                 end
             end
             % U副转角限制
-            if max(abs(obj.alpha)) > 36/180*pi
+            if max(abs(obj.alpha)) > 45/180*pi
                 bool_out = false;
             end
-            if max(abs(obj.beta)) > 36/180*pi
+            if max(abs(obj.beta)) > 45/180*pi
+                bool_out = false;
+            end
+%             if cos(obj.alpha(1))*cos(obj.beta(1)) < cos(45/180*pi)
+            if min(cos(obj.alpha).*cos(obj.beta)) < cos(45/180*pi)
                 bool_out = false;
             end
         end
