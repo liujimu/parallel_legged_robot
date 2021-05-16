@@ -32,7 +32,7 @@ rc_pee = [ -0.60,  -0.95,  -0.60;
         -0.60,  -0.95,   0.60;
         0.60,   -0.95,  -0.60;
         0.80,   -0.95,   0;
-        0.60,   -0.95,   0.60 ];
+        0.60,   -0.95,   0.60 ]';
 peb = [0 0 0 0 0 0];
 
 % l0min = leg.home_pos(1);
@@ -68,16 +68,11 @@ end
 border = [lowborder, upborder]
 
 
-%% 绘图
-leg_base_ori = hexa.leg_base_pe(:,1:3);
-hexagon = [leg_base_ori(1:3,:); leg_base_ori(6:-1:4,:); leg_base_ori(1,:)];
-plot3(hexagon(:,1),hexagon(:,3),hexagon(:,2),'k','LineWidth',1)
-hold on
-for i = 1:6
-    leg_line = [leg_base_ori(i,:); rc_pee(i,:)];
-    plot3(leg_line(:,1),leg_line(:,3),leg_line(:,2),'k','LineWidth',1)
-end
+%% 绘制机器人线框
+hexa.invKin(peb,rc_pee);
+hexa.plotRobot();
 
+%% 绘制单腿工作空间
 [k,v] = boundary(border',0.85);
 % scatter3(rc_pee(5,1),-rc_pee(5,3),rc_pee(5,2),...
 %         'MarkerEdgeColor','k',...
@@ -100,7 +95,7 @@ axis equal
 % axis equal
 
 %% 画出工作空间圆柱
-center = rc_pee(leg_id,:);
+center = rc_pee(:,leg_id);
 
 % 窄圆柱
 r1 = 0.4;
@@ -167,26 +162,26 @@ yticks(-0.8:0.8:0.8)
 zticks(-1.2:0.4:0)
 set(gca,'YDir','reverse') %交换y,z轴数据后，须改变Y轴方向以满足右手坐标系
 
-%% 使用正解求工作空间
-home_pos = [0.669, 0.69, 0.69];  %config(14:16)
-stroke = 0.41;
-
-q1 = linspace(home_pos(1),home_pos(1) + stroke,41);
-q2 = linspace(home_pos(2),home_pos(2) + stroke,41);
-q3 = linspace(home_pos(3),home_pos(3) + stroke,41);
-XX = zeros(length(q2),length(q3));
-YY = zeros(length(q2),length(q3));
-ZZ = zeros(length(q2),length(q3));
-
-for i = 1:length(q2)
-    for j = 1:length(q3)
-        pin_ = [q1(i), q2(j), min(q3)];
-        leg.forwardKinematics(pin_);
-        pee_ = leg.Pee_b;
-        XX(i,j) = pee_(1);
-        YY(i,j) = pee_(2);
-        ZZ(i,j) = pee_(3);
-    end
-end
-hold on
-surf(XX,ZZ,YY)
+%% 使用正解求工作空间，
+% home_pos = [0.669, 0.69, 0.69];  %config(14:16)
+% stroke = 0.41;
+% 
+% q1 = linspace(home_pos(1),home_pos(1) + stroke,41);
+% q2 = linspace(home_pos(2),home_pos(2) + stroke,41);
+% q3 = linspace(home_pos(3),home_pos(3) + stroke,41);
+% XX = zeros(length(q2),length(q3));
+% YY = zeros(length(q2),length(q3));
+% ZZ = zeros(length(q2),length(q3));
+% 
+% for i = 1:length(q2)
+%     for j = 1:length(q3)
+%         pin_ = [q1(i), q2(j), min(q3)];
+%         leg.forwardKinematics(pin_);
+%         pee_ = leg.Pee_b;
+%         XX(i,j) = pee_(1);
+%         YY(i,j) = pee_(2);
+%         ZZ(i,j) = pee_(3);
+%     end
+% end
+% hold on
+% surf(XX,ZZ,YY)

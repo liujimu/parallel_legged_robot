@@ -15,12 +15,16 @@ classdef Leg < handle
         home_pos
         Pee_b %身体坐标系下
         Pee %腿坐标系下
-        Pee_tracker %标定用
-        Pin
-        alpha
-        beta
-        q
-        stroke
+        Pee_tracker %标定用，靶球坐标
+        Pin %各支链长度
+        q %关节变量，减去home长度
+        Fee_b %足尖力，在身体坐标系下
+        Fee_l %足尖力，在腿坐标系下
+        Fin %驱动关节的推力
+        Kq %驱动支链刚度
+        alpha %主支链万向节第一转角，绕Y轴
+        beta %主支链万向节第二转角，绕局部Z轴
+        stroke %行程
         jac
     end
     
@@ -195,6 +199,15 @@ classdef Leg < handle
             Fin = obj.jac'*Fee;
         end
         
+        function Fee2b = calcFee(obj, Fin)
+            %calcFee 由关节力计算足尖力
+            %   Fee为足尖力，是三维向量，在腿坐标系下表示
+            Fin = Fin(:);
+            obj.calcVelocityJacobian();
+            Fee2l = obj.jac'\Fin;%三维力矢量，腿坐标系下
+            Fee2b = obj.base_pm(1:3,1:3)*Fee2l;%变换到身体坐标系下
+        end
+        
         function forwardKinematics(obj, pin, init_pee)
             %forwardKinematics 运动学正解
             %   pin是关节坐标
@@ -271,6 +284,12 @@ classdef Leg < handle
             end
         end
         
+        function calcJointStiffness(obj)
+            %calcJointStiffness 计算关节刚度
+            %   此处显示详细说明
+            
+        end
+
         function plotWorkspace(obj)
             %plotWorkspace 绘制工作空间示意图
             %   此处显示详细说明

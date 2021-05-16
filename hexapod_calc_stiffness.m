@@ -33,7 +33,7 @@ rc_pee = [ -0.60,  -0.95,  -0.60;
 peb = [0 0 0 0 0 0];
 hexa.invKin(peb,rc_pee');
 hexa.calcInvJac();
-body_inv_jac = hexa.inv_jac;
+body_jac_inv = hexa.body_jac_inv;
 
 G_vB = zeros(18,6);
 for leg_id = 1:6
@@ -49,6 +49,7 @@ for leg_id = 1:6
     G_vB(3*leg_id - 2:3*leg_id,:) = G_Bi;
 end
 
+body_jac_inv - G_vB %验证身体雅可比
 
 Kq = eye(18);
 K_x = G_vB'*Kq*G_vB;
@@ -62,15 +63,39 @@ Kq2 = eye(9);
 K_x2 = G_vB2'*Kq2*G_vB2;
 
 %计算关节力
-F_body = [1 0 0 0 0 0]';
+F_body = [0 1 0 0 0 0]';
 J_B = pinv(G_vB);
 F_in = J_B'*F_body;
+disp('六足站立下最大关节力')
+disp(max(abs(F_in)))
+% 
+J_B3l = pinv(G_vB1);
+F_in3l = J_B3l'*F_body;
+disp('三足站立下最大关节力')
+disp(max(abs(F_in3l)))
 
 %F_in1 = (G_vB*G_vB')\G_vB*F_body;%奇异
 F_in1 = G_vB*inv(G_vB'*G_vB)*F_body;
-F_in11 = G_vB/(G_vB'*G_vB)*F_body;
+% F_in11 = G_vB/(G_vB'*G_vB)*F_body;
 
-%验证
+%% 由关节力计算足尖力
+Fee2b = zeros(3,6);
+for i = 1:6
+    Fin_leg = F_in(3*i-2:3*i);
+    Fee2b(:,i) = hexa.leg(i).calcFee(Fin_leg);
+end
+disp('足尖力的合力')
+sum(Fee2b,2)
+
+Fee2b_3l = zeros(3,3);
+for i = 1:3
+    Fin_leg = F_in3l(3*i-2:3*i);
+    Fee2b_3l(:,i) = hexa.leg(i*2-1).calcFee(Fin_leg);
+end
+disp('足尖力的合力')
+sum(Fee2b_3l,2)
+
+%% 验证力反解的正确性
 norm(G_vB'*F_in - F_body)
 norm(G_vB'*F_in1 - F_body)
 

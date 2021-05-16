@@ -33,7 +33,7 @@ rc_pee = [ -0.60,  -0.95,  -0.60;
 peb = [0 0 0 0 0 0];
 hexa.invKin(peb,rc_pee');
 hexa.calcInvJac();
-body_inv_jac = hexa.inv_jac;
+body_jac_inv = hexa.body_jac_inv;
 
 G_vB = zeros(18,6);
 for leg_id = 1:6
@@ -69,6 +69,13 @@ for i = 1:6
     F_in = J_B'*F_body;%计算关节力
     payload(i) = Fa/max(F_in);
 end
+
+payload1 = hexa.calcPayload();
+
+
+% 三足负载情况
+payload3 = hexa.calcPayload3Leg();
+
 
 
 %F_in1 = (G_vB*G_vB')\G_vB*F_body;%奇异

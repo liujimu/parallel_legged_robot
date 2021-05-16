@@ -1,0 +1,8 @@
+# See https://github.com/github/gitignore/blob/master/TeX.gitignore
+# these rules might exclude image files for figures etc.
+*.fig
+*.svg
+*.eps
+*.pdf
+
+
